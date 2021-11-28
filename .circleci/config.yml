@@ -25,7 +25,8 @@ jobs:
             - v1-{{ .Branch }}
           paths:
             - /caches/repo.tar
-      - run: docker load -i /caches/repo.tar | true
+      - run: set +o pipefail
+      docker load -i /caches/repo.tar | true
       - run: docker build --cache-from=myapp -t myapp .
       - run: mkdir -p /caches && docker save -o /caches/repo.tar myapp
       - save_cache:
