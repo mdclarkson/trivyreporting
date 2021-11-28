@@ -50,10 +50,10 @@ jobs:
           #   --format template --template "@junit.tpl" \
           #   -o ~/tests/trivy-scan.xml myapp
           command: |
-            trivy image --exit-code 0 --no-progress \
+            trivy --cache-dir /tmp/trivy/ \
+            image --exit-code 0 --no-progress \
             --ignore-unfixed --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@junit.tpl" \
-            --cache-dir /tmp/trivy/ \
             -o ~/tests/trivy-scan.xml myapp
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
