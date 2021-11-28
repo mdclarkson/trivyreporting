@@ -44,7 +44,7 @@ jobs:
       - run:
           name: Download HTML formatter
           command: |
-            curl -sfL -o junit.tpl \
+            curl -sfL -o html.tpl \
             https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
       - run: mkdir -p ~/trivy/xml/ ~/trivy/html/ /tmp/trivy/
       - run:
