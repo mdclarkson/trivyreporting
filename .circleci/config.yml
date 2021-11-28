@@ -26,8 +26,8 @@ jobs:
           paths:
             - /caches/repo.tar
       - run: set +o pipefail; docker load -i /caches/repo.tar | true
-      - run: docker build --cache-from=MyApp -t MyApp .
-      - run: mkdir -p /caches && docker save -o /caches/repo.tar MyApp
+      - run: docker build --cache-from=myapp -t myapp .
+      - run: mkdir -p /caches && docker save -o /caches/repo.tar myapp
       - save_cache:
           key: cache-{{ .Branch }}-{{ epoch }}
           paths:
@@ -57,7 +57,7 @@ jobs:
             curl -sfL \
             https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh|\
             sh -s -- -b /usr/local/bin
-      - run: trivy --exit-code 0 --no-progress MyApp
+      - run: trivy --exit-code 0 --no-progress myapp
 
 workflows:
   version: 2
