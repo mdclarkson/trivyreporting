@@ -41,8 +41,12 @@ jobs:
           command: |
             curl -sfL -o junit.tpl \
             https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-      - run: mkdir -p ~/tests/
-      - run: mkdir -p /tmp/trivy/
+      - run:
+          name: Download HTML formatter
+          command: |
+            curl -sfL -o junit.tpl \
+            https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+      - run: mkdir -p ~/trivy/xml/ ~/trivy/html/ /tmp/trivy/
       - run:
           name: Scan image with Trivy
           # command: |
@@ -52,16 +56,23 @@ jobs:
           command: |
             trivy --cache-dir /tmp/trivy/ \
             image --exit-code 0 --no-progress \
-            --ignore-unfixed --severity CRITICAL,HIGH,MEDIUM \
+            --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@junit.tpl" \
-            -o ~/tests/trivy-scan.xml myapp
+            -o ~/trivy/xml/trivy-scan.xml myapp && \
+            trivy --cache-dir /tmp/trivy/ \
+            image --exit-code 0 --no-progress \
+            --severity CRITICAL,HIGH,MEDIUM \
+            --format template --template "@html.tpl" \
+            -o ~/trivy/html/trivy-scan.html myapp
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
             - /caches/repo.tar
             - /tmp/trivy/
       - store_test_results:
-          path: ~/tests
+          path: ~/trivy/xml/
+      - store_artifacts:
+          path: ~/trivy/html/
       - run:
           name: Emulate pushing
           # docker login here
