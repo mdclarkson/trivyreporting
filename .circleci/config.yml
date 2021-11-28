@@ -22,14 +22,14 @@ jobs:
           at: ~/repo
       - restore_cache:
           keys:
-            - cache-{{ .Branch }}
+            - v1-{{ .Branch }}
           paths:
             - /caches/repo.tar
       - run: docker load -i /caches/repo.tar | true
       - run: docker build --cache-from=myapp -t myapp .
       - run: mkdir -p /caches && docker save -o /caches/repo.tar myapp
       - save_cache:
-          key: cache-{{ .Branch }}-{{ epoch }}
+          key: v1-{{ .Branch }}-{{ epoch }}
           paths:
             - /caches/repo.tar
       - run:
