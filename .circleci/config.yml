@@ -25,13 +25,10 @@ jobs:
             - v1-{{ .Branch }}
           paths:
             - /caches/repo.tar
+            - /tmp/trivy/
       - run: set +o pipefail; docker load -i /caches/repo.tar | true
       - run: docker build --cache-from=myapp -t myapp .
       - run: mkdir -p /caches && docker save -o /caches/repo.tar myapp
-      - save_cache:
-          key: v1-{{ .Branch }}-{{ epoch }}
-          paths:
-            - /caches/repo.tar
       - run:
           name: Install Aquasecurity Trivy
           command: |
@@ -45,6 +42,7 @@ jobs:
             curl -sfL -o junit.tpl \
             https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
       - run: mkdir -p ~/tests/
+      - run: mkdir -p /tmp/trivy/
       - run:
           name: Scan image with Trivy
           # command: |
@@ -53,9 +51,15 @@ jobs:
           #   -o ~/tests/trivy-scan.xml myapp
           command: |
             trivy image --exit-code 0 --no-progress \
-            --ignore-unfixed --severity CRITICAL,HIGH,MEDIUM
+            --ignore-unfixed --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@junit.tpl" \
+            --cache-dir /tmp/trivy/ \
             -o ~/tests/trivy-scan.xml myapp
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/repo.tar
+            - /tmp/trivy/
       - store_test_results:
           path: ~/tests
       - run:
