@@ -13,6 +13,8 @@ jobs:
             - .
 
   build_and_push:
+    # Image is not persistent, testing should be in the
+    # same job as build, to save on pulling the image
     working_directory: ~/repo
     docker:
       - image: docker:stable-git
@@ -20,15 +22,26 @@ jobs:
       - setup_remote_docker
       - attach_workspace:
           at: ~/repo
+      # restore cache for docker layers and Trivy databases/results
+      # to invalidate a cache change version number in key
       - restore_cache:
           keys:
             - v1-{{ .Branch }}
           paths:
             - /caches/repo.tar
             - /tmp/trivy/
-      - run: set +o pipefail; docker load -i /caches/repo.tar | true
-      - run: docker build --cache-from=myapp -t myapp .
-      - run: mkdir -p /caches && docker save -o /caches/repo.tar myapp
+      - run:
+          name: Load Docker layers from cache
+          command: set +o pipefail; docker load -i /caches/repo.tar | true
+      - run:
+          name: Build Docker, use cache
+          command: docker build --cache-from=myapp -t myapp .
+      - run:
+          name: Create dirs for caches
+          command: mkdir -p /caches/ /tmp/trivy/
+      - run:
+          name: Save Docker layers
+          command: docker save -o /caches/repo.tar myapp
       - run:
           name: Install Aquasecurity Trivy
           command: |
@@ -46,24 +59,34 @@ jobs:
           command: |
             curl -sfL -o html.tpl \
             https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
-      - run: mkdir -p ~/trivy/xml/ ~/trivy/html/ /tmp/trivy/
       - run:
-          name: Scan image with Trivy
-          # command: |
-          #   trivy image --exit-code 0 --no-progress \
-          #   --format template --template "@junit.tpl" \
-          #   -o ~/tests/trivy-scan.xml myapp
+          name: Create dirs for reports
+          command: mkdir -p ~/trivy/xml/ ~/trivy/html/
+      - run:
+          name: Scan image with Trivy, generate JUnit results
+          # CRITICAL, HIGH, MEDIUM only, ignore unfixed
           command: |
             trivy --cache-dir /tmp/trivy/ \
-            image --exit-code 0 --no-progress \
+            image --ignore-unfixed --exit-code 0 --no-progress \
             --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@junit.tpl" \
-            -o ~/trivy/xml/trivy-scan.xml myapp && \
+            -o ~/trivy/xml/trivy-scan.xml myapp
+      - run:
+          name: Scan image with Trivy, generate HTML artifacts
+          # CRITICAL, HIGH, MEDIUM only, ignore unfixed
+          command: |
             trivy --cache-dir /tmp/trivy/ \
-            image --exit-code 0 --no-progress \
+            image --ignore-unfixed --exit-code 0 --no-progress \
             --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@html.tpl" \
             -o ~/trivy/html/trivy-scan.html myapp
+      - run:
+          name: Scan image with Trivy, fail for CRITICAL
+          # CRITICAL
+          command: |
+            trivy --cache-dir /tmp/trivy/ \
+            image --ignore-unfixed --exit-code 1 --no-progress \
+            --severity CRITICAL myapp > /dev/null
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
@@ -74,7 +97,7 @@ jobs:
       - store_artifacts:
           path: ~/trivy/html/
       - run:
-          name: Emulate pushing
+          name: Push image to registry
           # docker login here
           # docker push here
           command: |
