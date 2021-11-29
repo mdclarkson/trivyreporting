@@ -64,24 +64,24 @@ jobs:
           command: mkdir -p ~/trivy/xml/ ~/trivy/html/
       - run:
           name: Scan image with Trivy, generate JUnit results
-          # CRITICAL, HIGH, MEDIUM only, ignore unfixed
+          # CRITICAL, HIGH, MEDIUM only
           command: |
             trivy --cache-dir /tmp/trivy/ \
-            image --ignore-unfixed --exit-code 0 --no-progress \
+            image --exit-code 0 --no-progress \
             --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@junit.tpl" \
             -o ~/trivy/xml/trivy-scan.xml myapp
       - run:
           name: Scan image with Trivy, generate HTML artifacts
-          # CRITICAL, HIGH, MEDIUM only, ignore unfixed
+          # CRITICAL, HIGH, MEDIUM only
           command: |
             trivy --cache-dir /tmp/trivy/ \
-            image --ignore-unfixed --exit-code 0 --no-progress \
+            image --exit-code 0 --no-progress \
             --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@html.tpl" \
             -o ~/trivy/html/trivy-scan.html myapp
       - run:
-          name: Scan image with Trivy, fail for CRITICAL
+          name: Scan image with Trivy, fail for unfixed CRITICAL
           # CRITICAL
           command: |
             trivy --cache-dir /tmp/trivy/ \
