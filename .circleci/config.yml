@@ -85,7 +85,7 @@ jobs:
           command: |
             trivy --cache-dir /tmp/trivy/ \
             image --ignore-unfixed --exit-code 1 --no-progress \
-            --severity CRITICAL,HIGH,MEDIUM myapp > /dev/null
+            --severity CRITICAL,HIGH,MEDIUM myapp
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
