@@ -1,3 +1,4 @@
+---
 version: 2.1
 
 jobs:
@@ -73,20 +74,18 @@ jobs:
             -o ~/trivy/xml/trivy-scan.xml myapp
       - run:
           name: Scan image with Trivy, generate HTML artifacts
-          # CRITICAL, HIGH, MEDIUM only
+          # all severities
           command: |
             trivy --cache-dir /tmp/trivy/ \
             image --exit-code 0 --no-progress \
-            --severity CRITICAL,HIGH,MEDIUM \
             --format template --template "@html.tpl" \
             -o ~/trivy/html/trivy-scan.html myapp
       - run:
-          name: Scan image with Trivy, fail for unfixed CRITICAL
-          # CRITICAL
+          name: Scan image with Trivy, fail for unfixed MEDIUM or higher
           command: |
             trivy --cache-dir /tmp/trivy/ \
             image --ignore-unfixed --exit-code 1 --no-progress \
-            --severity CRITICAL myapp > /dev/null
+            --severity CRITICAL,HIGH,MEDIUM myapp > /dev/null
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
